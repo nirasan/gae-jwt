@@ -1,0 +1,7 @@
+~/g/s/g/n/g/handler ❯❯❯ curl -H "Accept: application/json" -H "Content-type: application/json" -X POST -d '{"username":"user2","password":"pass"}'  http://localhost:8080/registration
+{"Success":true}
+~/g/s/g/n/g/handler ❯❯❯ curl -H "Accept: application/json" -H "Content-type: application/json" -X POST -d '{"username":"user2","password":"pass"}'  http://localhost:8080/authentication
+{"Success":true,"Token":"eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE0NzczMDc0MzEsInN1YiI6InVzZXIyIn0.lyYL9f8knPJ-scj0l6UkffiXw9Z0G5yIz0XQmQz-fAWQHxrz4B0_ijZ1y0qlEu_IWwv8wgzqnT1EeP98z3S1oQ"}
+~/g/s/g/n/g/handler ❯❯❯ curl -H "Accept: application/json" -H "Content-type: application/json" -H "Authorization: Bearer eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE0NzczMDc0MzEsInN1YiI6InVzZXIyIn0.lyYL9f8knPJ-scj0l6UkffiXw9Z0G5yIz0XQmQz-fAWQHxrz4B0_ijZ1y0qlEu_IWwv8wgzqnT1EeP98z3S1oQ" -X POST -d '{}'  http://localhost:8080/authrized_hello
+404 page not found
+~/g/s/g/n/g/handler ❯❯❯ curl -H "Accept: application/json" -H "Content-type: application/json" -H "Authorization: Bearer eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE0NzczMDc0MzEsInN1YiI6InVzZXIyIn0.lyYL9f8knPJ-scj0l6UkffiXw9Z0G5yIz0XQmQz-fAWQHxrz4B0_ijZ1y0qlEu_IWwv8wgzqnT1EeP98z3S1oQ" -X POST -d '{}'  http://localhost:8080/authorized_hello

@@ -2,7 +2,6 @@ package handler
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"time"
 
@@ -15,12 +14,10 @@ import (
 
 func NewHandler() http.Handler {
 	r := mux.NewRouter()
-	r.HandleFunc("/hello", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintln(w, "hello world")
-	})
 	r.HandleFunc("/registration", RegistrationHandler)
 	r.HandleFunc("/authentication", AuthenticationHandler)
-	r.HandleFunc("/authorization", AuthorizationHandler)
+	r.HandleFunc("/authorized_hello", AuthorizedHelloWorldHandler)
+	r.HandleFunc("/hello", HelloWorldHandler)
 	return r
 }
 
@@ -79,20 +76,37 @@ func AuthenticationHandler(w http.ResponseWriter, r *http.Request) {
 	EncodeJson(w, AuthenticationHandlerResponse{Success: true, Token: signedToken})
 }
 
-type AuthorizationHandlerResponse struct {
+type HelloWorldHandlerResponse struct {
 	Success bool
+	Message string
 }
 
-func AuthorizationHandler(w http.ResponseWriter, r *http.Request) {
+func HelloWorldHandler(w http.ResponseWriter, r *http.Request) {
+	EncodeJson(w, HelloWorldHandlerResponse{Success: true, Message: "Hello World"})
+}
+
+func AuthorizedHelloWorldHandler(w http.ResponseWriter, r *http.Request) {
+	token, e := Authorization(r)
+
+	if e != nil {
+		EncodeJson(w, HelloWorldHandlerResponse{Success: false})
+	}
+
+	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
+		EncodeJson(w, HelloWorldHandlerResponse{Success: true, Message: "Hello " + claims["sub"].(string)})
+	}
+}
+
+func Authorization(r *http.Request) (*jwt.Token, error) {
 
 	header := r.Header.Get("Authorization")
 	if header == "" {
-		panic("Invalid authorization hader")
+		return nil, errors.New("Invalid authorization hader")
 	}
 
 	parts := strings.SplitN(header, " ", 2)
 	if !(len(parts) == 2 && parts[0] == "Bearer") {
-		panic("Invalid authorization hader")
+		return nil, errors.New("Invalid authorization hader")
 	}
 
 	token, e := jwt.Parse(parts[1], func(t *jwt.Token) (interface{}, error){
@@ -111,15 +125,14 @@ func AuthorizationHandler(w http.ResponseWriter, r *http.Request) {
 		return key, nil
 	})
 	if e != nil {
-		panic(e.Error())
+		return nil, errors.New(e.Error())
 	}
 
 	if _, ok := token.Claims.(jwt.MapClaims); !ok || !token.Valid {
-		panic("Invalid token")
-		return
+		return nil, errors.New("Invalid token")
 	}
 
-	EncodeJson(w, AuthorizationHandlerResponse{Success: true})
+	return token, nil
 }
 
 func DecodeJson(r *http.Request, data interface{}) {
