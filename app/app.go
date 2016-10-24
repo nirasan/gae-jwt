@@ -2,9 +2,9 @@ package app
 
 import (
 	"net/http"
-	"github.com/nirasan/gae-jwt"
+	"github.com/nirasan/gae-jwt/handler"
 )
 
 func init() {
-	http.Handle("/", gae_jwt.NewHandler())
+	http.Handle("/", handler.NewHandler())
 }

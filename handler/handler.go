@@ -1,4 +1,4 @@
-package gae_jwt
+package handler
 
 import (
 	"net/http"
