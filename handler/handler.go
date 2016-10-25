@@ -10,6 +10,9 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/nirasan/gae-jwt/bindata"
 	"strings"
+	"google.golang.org/appengine/datastore"
+	"google.golang.org/appengine"
+	"google.golang.org/appengine/log"
 )
 
 func NewHandler() http.Handler {
@@ -30,13 +33,24 @@ type RegistrationHandlerResponse struct {
 	Success bool
 }
 
-var userTable = make(map[string]string)
+type UserAuthentication struct {
+	Username string
+	Password string
+}
 
 func RegistrationHandler(w http.ResponseWriter, r *http.Request) {
 	var req RegistrationHandlerRequest
 	DecodeJson(r, &req)
-	userTable[req.Username] = req.Password
-	EncodeJson(w, RegistrationHandlerResponse{Success: true})
+
+	ctx := appengine.NewContext(r)
+	key := datastore.NewIncompleteKey(ctx, "UserAuthentication", nil)
+	ua := UserAuthentication{Username: req.Username, Password: req.Password}
+
+	if _, err := datastore.Put(ctx, key, &ua); err == nil {
+		EncodeJson(w, RegistrationHandlerResponse{Success: true})
+	} else {
+		EncodeJson(w, RegistrationHandlerResponse{Success: false})
+	}
 }
 
 type AuthenticationHandlerRequest struct {
@@ -52,10 +66,16 @@ type AuthenticationHandlerResponse struct {
 func AuthenticationHandler(w http.ResponseWriter, r *http.Request) {
 	var req AuthenticationHandlerRequest
 	DecodeJson(r, &req)
-	if password, ok := userTable[req.Username]; !ok || password != req.Password {
+
+	ctx := appengine.NewContext(r)
+	query := datastore.NewQuery("UserAuthentication").Filter("Username =", req.Username).Filter("Password =", req.Password)
+	var userAuthentications []UserAuthentication
+	if _, err := query.GetAll(ctx, &userAuthentications); err != nil || len(userAuthentications) == 0 {
+		log.Errorf(ctx, "%v %v", err, &userAuthentications)
 		EncodeJson(w, AuthenticationHandlerResponse{Success: false})
 		return
 	}
+
 	method := jwt.GetSigningMethod("ES256")
 	token := jwt.NewWithClaims(method, jwt.MapClaims{
 		"sub": req.Username,
@@ -65,11 +85,11 @@ func AuthenticationHandler(w http.ResponseWriter, r *http.Request) {
 	if e != nil {
 		panic(e.Error())
 	}
-	key, e := jwt.ParseECPrivateKeyFromPEM(pem)
+	privateKey, e := jwt.ParseECPrivateKeyFromPEM(pem)
 	if e != nil {
 		panic(e.Error())
 	}
-	signedToken, e := token.SignedString(key)
+	signedToken, e := token.SignedString(privateKey)
 	if e != nil {
 		panic(e.Error())
 	}
