@@ -11,7 +11,7 @@ import (
 	"github.com/nirasan/gae-jwt/bindata"
 	"google.golang.org/appengine"
 	"google.golang.org/appengine/datastore"
-	"google.golang.org/appengine/log"
+	"golang.org/x/crypto/bcrypt"
 	"strings"
 )
 
@@ -75,12 +75,16 @@ func RegistrationHandler(w http.ResponseWriter, r *http.Request) {
 	DecodeJson(r, &req)
 
 	// ユーザー情報の登録準備
-	// TODO Password にはソルトつけたりストレッチングしたりする
 	ctx := appengine.NewContext(r)
 	key := datastore.NewIncompleteKey(ctx, "UserAuthentication", nil)
-	ua := UserAuthentication{Username: req.Username, Password: req.Password}
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
+	if err != nil {
+		panic(err.Error())
+	}
+	ua := UserAuthentication{Username: req.Username, Password: string(hashedPassword)}
 
 	// Datastore へユーザー情報を登録
+	//TODO Username がユニークになるように参照と挿入のトランザクションを実行する
 	if _, err := datastore.Put(ctx, key, &ua); err == nil {
 		EncodeJson(w, RegistrationHandlerResponse{Success: true})
 	} else {
@@ -98,10 +102,14 @@ func AuthenticationHandler(w http.ResponseWriter, r *http.Request) {
 
 	// ユーザーが存在するかどうか確認
 	ctx := appengine.NewContext(r)
-	query := datastore.NewQuery("UserAuthentication").Filter("Username =", req.Username).Filter("Password =", req.Password)
+	query := datastore.NewQuery("UserAuthentication").Filter("Username =", req.Username)
 	var userAuthentications []UserAuthentication
-	if _, err := query.GetAll(ctx, &userAuthentications); err != nil || len(userAuthentications) == 0 {
-		log.Errorf(ctx, "%v %v", err, &userAuthentications)
+	if _, err := query.GetAll(ctx, &userAuthentications); err != nil || len(userAuthentications) != 1 {
+		EncodeJson(w, AuthenticationHandlerResponse{Success: false})
+		return
+	}
+	// パスワードの検証
+	if err := bcrypt.CompareHashAndPassword([]byte(userAuthentications[0].Password), []byte(req.Password)); err != nil {
 		EncodeJson(w, AuthenticationHandlerResponse{Success: false})
 		return
 	}
