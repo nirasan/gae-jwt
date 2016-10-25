@@ -9,10 +9,10 @@ import (
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gorilla/mux"
 	"github.com/nirasan/gae-jwt/bindata"
-	"strings"
-	"google.golang.org/appengine/datastore"
 	"google.golang.org/appengine"
+	"google.golang.org/appengine/datastore"
 	"google.golang.org/appengine/log"
+	"strings"
 )
 
 func NewHandler() http.Handler {
@@ -24,6 +24,11 @@ func NewHandler() http.Handler {
 	return r
 }
 
+type UserAuthentication struct {
+	Username string
+	Password string
+}
+
 type RegistrationHandlerRequest struct {
 	Username string
 	Password string
@@ -33,9 +38,19 @@ type RegistrationHandlerResponse struct {
 	Success bool
 }
 
-type UserAuthentication struct {
+type AuthenticationHandlerRequest struct {
 	Username string
 	Password string
+}
+
+type AuthenticationHandlerResponse struct {
+	Success bool
+	Token   string
+}
+
+type HelloWorldHandlerResponse struct {
+	Success bool
+	Message string
 }
 
 func RegistrationHandler(w http.ResponseWriter, r *http.Request) {
@@ -51,16 +66,6 @@ func RegistrationHandler(w http.ResponseWriter, r *http.Request) {
 	} else {
 		EncodeJson(w, RegistrationHandlerResponse{Success: false})
 	}
-}
-
-type AuthenticationHandlerRequest struct {
-	Username string `json:"username"`
-	Password string `json:"password"`
-}
-
-type AuthenticationHandlerResponse struct {
-	Success bool
-	Token   string
 }
 
 func AuthenticationHandler(w http.ResponseWriter, r *http.Request) {
@@ -94,11 +99,6 @@ func AuthenticationHandler(w http.ResponseWriter, r *http.Request) {
 		panic(e.Error())
 	}
 	EncodeJson(w, AuthenticationHandlerResponse{Success: true, Token: signedToken})
-}
-
-type HelloWorldHandlerResponse struct {
-	Success bool
-	Message string
 }
 
 func HelloWorldHandler(w http.ResponseWriter, r *http.Request) {
