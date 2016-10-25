@@ -5,11 +5,11 @@ import (
 	"net/http"
 	"time"
 
+	"errors"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gorilla/mux"
 	"github.com/nirasan/gae-jwt/bindata"
 	"strings"
-	"github.com/pkg/errors"
 )
 
 func NewHandler() http.Handler {
@@ -109,7 +109,7 @@ func Authorization(r *http.Request) (*jwt.Token, error) {
 		return nil, errors.New("Invalid authorization hader")
 	}
 
-	token, e := jwt.Parse(parts[1], func(t *jwt.Token) (interface{}, error){
+	token, e := jwt.Parse(parts[1], func(t *jwt.Token) (interface{}, error) {
 		method := jwt.GetSigningMethod("ES256")
 		if method != t.Method {
 			return nil, errors.New("Invalid signing method")

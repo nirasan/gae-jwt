@@ -1,8 +1,8 @@
 package app
 
 import (
-	"net/http"
 	"github.com/nirasan/gae-jwt/handler"
+	"net/http"
 )
 
 func init() {

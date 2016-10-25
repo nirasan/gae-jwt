@@ -183,8 +183,8 @@ func AssetNames() []string {
 // _bindata is a table, holding each asset generator, mapped to its name.
 var _bindata = map[string]func() (*asset, error){
 	"assets/ec256-key-pair.pem": assetsEc256KeyPairPem,
-	"assets/ec256-key-pri.pem": assetsEc256KeyPriPem,
-	"assets/ec256-key-pub.pem": assetsEc256KeyPubPem,
+	"assets/ec256-key-pri.pem":  assetsEc256KeyPriPem,
+	"assets/ec256-key-pub.pem":  assetsEc256KeyPubPem,
 }
 
 // AssetDir returns the file names below a certain
@@ -226,11 +226,12 @@ type bintree struct {
 	Func     func() (*asset, error)
 	Children map[string]*bintree
 }
+
 var _bintree = &bintree{nil, map[string]*bintree{
 	"assets": &bintree{nil, map[string]*bintree{
 		"ec256-key-pair.pem": &bintree{assetsEc256KeyPairPem, map[string]*bintree{}},
-		"ec256-key-pri.pem": &bintree{assetsEc256KeyPriPem, map[string]*bintree{}},
-		"ec256-key-pub.pem": &bintree{assetsEc256KeyPubPem, map[string]*bintree{}},
+		"ec256-key-pri.pem":  &bintree{assetsEc256KeyPriPem, map[string]*bintree{}},
+		"ec256-key-pub.pem":  &bintree{assetsEc256KeyPubPem, map[string]*bintree{}},
 	}},
 }}
 
@@ -280,4 +281,3 @@ func _filePath(dir, name string) string {
 	cannonicalName := strings.Replace(name, "\\", "/", -1)
 	return filepath.Join(append([]string{dir}, strings.Split(cannonicalName, "/")...)...)
 }
-
