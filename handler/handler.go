@@ -106,6 +106,11 @@ func AuthenticationHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// 秘密鍵を go-bindata で固めたデータから取得
+	pem, e := bindata.Asset("assets/ec256-key-pri.pem")
+	if e != nil {
+		panic(e.Error())
+	}
 	// 署名アルゴリズムの作成
 	method := jwt.GetSigningMethod("ES256")
 	// トークンの作成
@@ -113,11 +118,6 @@ func AuthenticationHandler(w http.ResponseWriter, r *http.Request) {
 		"sub": req.Username,
 		"exp": time.Now().Add(time.Hour * 1).Unix(),
 	})
-	// 秘密鍵を go-bindata で固めたデータから取得
-	pem, e := bindata.Asset("assets/ec256-key-pri.pem")
-	if e != nil {
-		panic(e.Error())
-	}
 	// 秘密鍵のパース
 	privateKey, e := jwt.ParseECPrivateKeyFromPEM(pem)
 	if e != nil {
