@@ -87,7 +87,7 @@ func RegistrationHandler(w http.ResponseWriter, r *http.Request) {
 	err = datastore.RunInTransaction(ctx, func(ctx context.Context) error {
 		key := datastore.NewKey(ctx, "UserAuthentication", req.Username, 0, nil)
 		var userAuthentication UserAuthentication
-		if err := datastore.Get(ctx, key, &userAuthentication); err == nil || userAuthentication.Username != ""{
+		if err := datastore.Get(ctx, key, &userAuthentication); err != datastore.ErrNoSuchEntity {
 			return errors.New("user already exist")
 		}
 		if _, err := datastore.Put(ctx, key, &ua); err == nil {
