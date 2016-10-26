@@ -12,6 +12,7 @@ import (
 	"google.golang.org/appengine"
 	"google.golang.org/appengine/datastore"
 	"golang.org/x/crypto/bcrypt"
+	"golang.org/x/net/context"
 	"strings"
 )
 
@@ -76,7 +77,6 @@ func RegistrationHandler(w http.ResponseWriter, r *http.Request) {
 
 	// ユーザー情報の登録準備
 	ctx := appengine.NewContext(r)
-	key := datastore.NewIncompleteKey(ctx, "UserAuthentication", nil)
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
 	if err != nil {
 		panic(err.Error())
@@ -84,8 +84,20 @@ func RegistrationHandler(w http.ResponseWriter, r *http.Request) {
 	ua := UserAuthentication{Username: req.Username, Password: string(hashedPassword)}
 
 	// Datastore へユーザー情報を登録
-	//TODO Username がユニークになるように参照と挿入のトランザクションを実行する
-	if _, err := datastore.Put(ctx, key, &ua); err == nil {
+	err = datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+		key := datastore.NewKey(ctx, "UserAuthentication", req.Username, 0, nil)
+		var userAuthentication UserAuthentication
+		if err := datastore.Get(ctx, key, &userAuthentication); err == nil || userAuthentication.Username != ""{
+			return errors.New("user already exist")
+		}
+		if _, err := datastore.Put(ctx, key, &ua); err == nil {
+			return nil
+		} else {
+			return err
+		}
+	}, nil)
+
+	if err == nil {
 		EncodeJson(w, RegistrationHandlerResponse{Success: true})
 	} else {
 		EncodeJson(w, RegistrationHandlerResponse{Success: false})
@@ -102,14 +114,14 @@ func AuthenticationHandler(w http.ResponseWriter, r *http.Request) {
 
 	// ユーザーが存在するかどうか確認
 	ctx := appengine.NewContext(r)
-	query := datastore.NewQuery("UserAuthentication").Filter("Username =", req.Username)
-	var userAuthentications []UserAuthentication
-	if _, err := query.GetAll(ctx, &userAuthentications); err != nil || len(userAuthentications) != 1 {
+	key := datastore.NewKey(ctx, "UserAuthentication", req.Username, 0, nil)
+	var userAuthentication UserAuthentication
+	if err := datastore.Get(ctx, key, &userAuthentication); err != nil {
 		EncodeJson(w, AuthenticationHandlerResponse{Success: false})
 		return
 	}
 	// パスワードの検証
-	if err := bcrypt.CompareHashAndPassword([]byte(userAuthentications[0].Password), []byte(req.Password)); err != nil {
+	if err := bcrypt.CompareHashAndPassword([]byte(userAuthentication.Password), []byte(req.Password)); err != nil {
 		EncodeJson(w, AuthenticationHandlerResponse{Success: false})
 		return
 	}
