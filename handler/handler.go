@@ -9,10 +9,10 @@ import (
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gorilla/mux"
 	"github.com/nirasan/gae-jwt/bindata"
-	"google.golang.org/appengine"
-	"google.golang.org/appengine/datastore"
 	"golang.org/x/crypto/bcrypt"
 	"golang.org/x/net/context"
+	"google.golang.org/appengine"
+	"google.golang.org/appengine/datastore"
 	"strings"
 )
 
